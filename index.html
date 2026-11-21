@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b2a6b">
+<title>La Lente</title>
+<meta name="description" content="Une tortue géante porte un village sur un désert de sel changé en miroir. Une journée à traverser, de l'aube aux étoiles.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%231b2a6b'/%3E%3Cpath d='M7 20c1-7 5-10 9-10s8 3 9 10z' fill='%23fbf6ec'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css?v=2">
+<link rel="preload" href="fonts/gloock.woff2" as="font" type="font/woff2" crossorigin>
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three.module.js",
+  "three/addons/": "./vendor/addons/"
+} }
+</script>
+</head>
+<body class="charge">
+<canvas id="scene" aria-label="Une tortue géante marche sur un miroir de sel, un village sur le dos"></canvas>
+
+<div id="chargement" aria-live="polite">
+  <p class="ch-nom">La Lente</p>
+  <p class="ch-pct"><span id="pct">0</span></p>
+</div>
+
+<header class="haut">
+  <p class="marque">La Lente</p>
+  <button id="son" type="button" aria-pressed="false"><span class="son-barres" aria-hidden="true"><i></i><i></i><i></i></span><span id="son-txt">Son</span></button>
+</header>
+
+<nav class="cadran" aria-label="Moments de la journée">
+  <p class="heure" id="heure" aria-live="off">05:48</p>
+  <ol id="moments">
+    <li><button type="button" data-p="0">Aube</button></li>
+    <li><button type="button" data-p=".25">Matin</button></li>
+    <li><button type="button" data-p=".5">Midi</button></li>
+    <li><button type="button" data-p=".75">Couchant</button></li>
+    <li><button type="button" data-p="1">Nuit</button></li>
+  </ol>
+</nav>
+
+<p id="legende" role="status"></p>
+<div id="curseur" aria-hidden="true"><span></span></div>
+
+<main>
+  <section class="chap" data-i="0">
+    <div class="txt txt-bas">
+      <p class="sur">Elle ne s'est jamais arrêtée</p>
+      <p class="indice"><span class="i-desk">Fais défiler le temps. Touche l'eau.</span><span class="i-mob">Glisse pour passer le temps. Touche l'eau.</span></p>
+    </div>
+  </section>
+  <section class="chap" data-i="1">
+    <div class="txt txt-haut">
+      <h2>Quatorze toits</h2>
+      <p>Un village entier tient sur son dos. Touche une maison pour y allumer la lumière.</p>
+    </div>
+  </section>
+  <section class="chap" data-i="2">
+    <div class="txt txt-droite">
+      <h2>On y vit</h2>
+      <p>Le mur s'est ouvert à l'atelier d'Odile. Elle corrige la carte à chaque pas.</p>
+    </div>
+  </section>
+  <section class="chap" data-i="3">
+    <div class="txt txt-gauche">
+      <h2>Elle te regarde</h2>
+      <p>Bouge, elle te suit des yeux. Touche-la doucement.</p>
+    </div>
+  </section>
+  <section class="chap fin" data-i="4">
+    <div class="txt txt-bas">
+      <h2>Le ciel en dessous</h2>
+      <p>La nuit, le sel disparaît. L'eau s'allume où tu la touches.</p>
+      <button id="revenir" type="button">Revenir à l'aube</button>
+      <p class="credits">Three.js · Blender · rochers et matières Poly Haven (CC0) · Gloock, Instrument Sans (OFL)</p>
+    </div>
+  </section>
+</main>
+
+<div id="secours" hidden>
+  <img src="assets/secours.jpg" alt="La tortue et son village, reflétés dans le miroir de sel">
+  <p>Ton navigateur n'a pas pu lancer la 3D. Voici la scène, en image.</p>
+</div>
+
+<script src="vendor/lenis.min.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
