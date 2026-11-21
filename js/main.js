@@ -255,11 +255,16 @@ const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight 
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 const finition = new ShaderPass({
-  uniforms: { tDiffuse: { value: null }, uT: { value: 0 }, uG: { value: mobile ? .028 : .038 } },
+  uniforms: { tDiffuse: { value: null }, uT: { value: 0 }, uG: { value: mobile ? .028 : .038 }, uContraste: { value: 0 } },
   vertexShader: 'varying vec2 vU; void main(){ vU=uv; gl_Position=vec4(position.xy,0.,1.); }',
-  fragmentShader: `precision highp float; varying vec2 vU; uniform sampler2D tDiffuse; uniform float uT,uG;
+  fragmentShader: `precision highp float; varying vec2 vU; uniform sampler2D tDiffuse; uniform float uT,uG,uContraste;
     float h(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233))+uT)*43758.5453); }
-    void main(){ vec3 c=texture2D(tDiffuse,vU).rgb; vec2 q=vU-.5; float v=smoothstep(.95,.32,length(q*vec2(1.,.92))); c*=mix(.8,1.,v); c+=(h(vU*vec2(1920.,1080.))-.5)*uG; gl_FragColor=vec4(c,1.); }`,
+    void main(){
+      vec3 c = clamp(texture2D(tDiffuse,vU).rgb, 0., 1.);
+      c = mix(c, c*c*(3.-2.*c), uContraste);
+      vec2 q=vU-.5; float v=smoothstep(.95,.32,length(q*vec2(1.,.92))); c*=mix(.8,1.,v);
+      c+=(h(vU*vec2(1920.,1080.))-.5)*uG; gl_FragColor=vec4(c,1.);
+    }`,
 });
 composer.addPass(finition);
 
@@ -510,6 +515,7 @@ function maj(dt) {
   if (tLegende > 0) { tLegende -= dt; if (tLegende <= 0) legende.classList.remove('vu'); }
   son.maj(T, nuit);
   finition.uniforms.uT.value = ctime % 10;
+  finition.uniforms.uContraste.value = et.contraste;
 
   // ombres : la bete est lente, inutile de les recalculer a chaque image
   soleil.shadow.needsUpdate ||= (images % majOmbres) === 0;

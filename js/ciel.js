@@ -6,12 +6,12 @@ const v = (x, y, z) => new THREE.Vector3(x, y, z).normalize();
 
 // Cles de la journee. Les couleurs sont donnees a l'oeil, converties en lineaire par THREE.Color.
 export const CLES = [
-  { t: 0,    zen: c('#21328f'), mil: c('#a877c6'), hor: c('#ff9d7d'), sol: v(-.86, .13, -.5), solC: c('#ffb08a'), solI: 2.6, hemiH: c('#c6b8f0'), hemiB: c('#c9a29c'), hemiI: 1.55, env: .8, nuageL: c('#ffc4a8'), nuageS: c('#7f6fb8'), couv: .50, nuit: 0, eau: c('#d9c7cf'), expo: 1.0, bloom: .3, rim: .9 },
-  { t: .27,  zen: c('#1458cf'), mil: c('#62a8ee'), hor: c('#def1f7'), sol: v(-.55, .72, .8), solC: c('#fff1dc'), solI: 3.2, hemiH: c('#a9d0f5'), hemiB: c('#d8d2c2'), hemiI: 1.1, env: .75, nuageL: c('#ffffff'), nuageS: c('#88a8d4'), couv: .56, nuit: 0, eau: c('#eef2f0'), expo: .94, bloom: .16, rim: .25 },
-  { t: .50,  zen: c('#0f49b8'), mil: c('#4d97e6'), hor: c('#d2ecf5'), sol: v(.2, .92, .55), solC: c('#fff6e6'), solI: 3.5, hemiH: c('#a9d0f5'), hemiB: c('#e0dac8'), hemiI: 1.15, env: .8, nuageL: c('#ffffff'), nuageS: c('#8fb0db'), couv: .52, nuit: 0, eau: c('#f2f4f0'), expo: .9, bloom: .14, rim: .12 },
-  { t: .74,  zen: c('#1e1b73'), mil: c('#d13f72'), hor: c('#ff9e45'), sol: v(.82, .17, .55), solC: c('#ff9b68'), solI: 3.3, hemiH: c('#b079c2'), hemiB: c('#b0705f'), hemiI: 1.1, env: .55, nuageL: c('#ff9a6e'), nuageS: c('#5f2f7c'), couv: .55, nuit: .05, eau: c('#c88a8a'), expo: 1.02, bloom: .34, rim: 1.0 },
-  { t: .86,  zen: c('#0a0f44'), mil: c('#352a7c'), hor: c('#a4507f'), sol: v(.5, .42, .45), solC: c('#7f8fe6'), solI: .45, hemiH: c('#3c4596'), hemiB: c('#2a2c5c'), hemiI: .65, env: .34, nuageL: c('#74518f'), nuageS: c('#1c1b52'), couv: .46, nuit: .55, eau: c('#4c4a78'), expo: 1.08, bloom: .38, rim: .35 },
-  { t: 1,    zen: c('#02041a'), mil: c('#07103a'), hor: c('#14255e'), sol: v(-.5, .55, .68), solC: c('#a9c0ff'), solI: 1.15, hemiH: c('#3a52ad'), hemiB: c('#1b2358'), hemiI: .85, env: .34, nuageL: c('#27366f'), nuageS: c('#050a2a'), couv: .3, nuit: 1, eau: c('#121a3e'), expo: 1.18, bloom: .4, rim: .22 },
+  { t: 0,    zen: c('#21328f'), mil: c('#a877c6'), hor: c('#ff9d7d'), sol: v(-.86, .13, -.5), solC: c('#ffb08a'), solI: 3.4, hemiH: c('#c6b8f0'), hemiB: c('#e3a383'), hemiI: 1.15, env: .62, nuageL: c('#ffc4a8'), nuageS: c('#7f6fb8'), couv: .50, nuit: 0, eau: c('#d9c7cf'), expo: 1.04, bloom: .3, rim: 2.2, contraste: .16 },
+  { t: .27,  zen: c('#1458cf'), mil: c('#62a8ee'), hor: c('#def1f7'), sol: v(-.55, .72, .8), solC: c('#fff1dc'), solI: 3.9, hemiH: c('#a9d0f5'), hemiB: c('#e3cdb0'), hemiI: .75, env: .55, nuageL: c('#ffffff'), nuageS: c('#88a8d4'), couv: .56, nuit: 0, eau: c('#eef2f0'), expo: .98, bloom: .16, rim: .25, contraste: .2 },
+  { t: .50,  zen: c('#0f49b8'), mil: c('#4d97e6'), hor: c('#d2ecf5'), sol: v(.2, .92, .55), solC: c('#fff6e6'), solI: 4.0, hemiH: c('#a9d0f5'), hemiB: c('#e6d6bc'), hemiI: .8, env: .58, nuageL: c('#ffffff'), nuageS: c('#8fb0db'), couv: .52, nuit: 0, eau: c('#f2f4f0'), expo: .95, bloom: .14, rim: .12, contraste: .22 },
+  { t: .74,  zen: c('#1e1b73'), mil: c('#d13f72'), hor: c('#ff9e45'), sol: v(.82, .17, .55), solC: c('#ff9b68'), solI: 3.8, hemiH: c('#b079c2'), hemiB: c('#c07a5c'), hemiI: .85, env: .45, nuageL: c('#ff9a6e'), nuageS: c('#5f2f7c'), couv: .55, nuit: .05, eau: c('#c88a8a'), expo: 1.02, bloom: .34, rim: 1.9, contraste: .18 },
+  { t: .86,  zen: c('#0a0f44'), mil: c('#352a7c'), hor: c('#a4507f'), sol: v(.5, .42, .45), solC: c('#7f8fe6'), solI: .45, hemiH: c('#3c4596'), hemiB: c('#2a2c5c'), hemiI: .65, env: .34, nuageL: c('#74518f'), nuageS: c('#1c1b52'), couv: .46, nuit: .55, eau: c('#4c4a78'), expo: 1.08, bloom: .38, rim: .35, contraste: .1 },
+  { t: 1,    zen: c('#02041a'), mil: c('#07103a'), hor: c('#14255e'), sol: v(-.5, .55, .68), solC: c('#a9c0ff'), solI: 1.15, hemiH: c('#3a52ad'), hemiB: c('#1b2358'), hemiI: .85, env: .34, nuageL: c('#27366f'), nuageS: c('#050a2a'), couv: .3, nuit: 1, eau: c('#121a3e'), expo: 1.18, bloom: .4, rim: .22, contraste: .06 },
 ];
 
 export function etatDuTemps(T, out) {
@@ -19,7 +19,7 @@ export function etatDuTemps(T, out) {
   const a = CLES[i], b = CLES[i + 1], k0 = THREE.MathUtils.clamp((T - a.t) / (b.t - a.t), 0, 1), k = k0 * k0 * (3 - 2 * k0);
   for (const n of ['zen', 'mil', 'hor', 'solC', 'hemiH', 'hemiB', 'nuageL', 'nuageS', 'eau']) out[n].copy(a[n]).lerp(b[n], k);
   out.sol.copy(a.sol).lerp(b.sol, k).normalize();
-  for (const n of ['solI', 'hemiI', 'env', 'couv', 'nuit', 'expo', 'bloom', 'rim']) out[n] = a[n] + (b[n] - a[n]) * k;
+  for (const n of ['solI', 'hemiI', 'env', 'couv', 'nuit', 'expo', 'bloom', 'rim', 'contraste']) out[n] = a[n] + (b[n] - a[n]) * k;
   return out;
 }
 export function nouvelEtat() {

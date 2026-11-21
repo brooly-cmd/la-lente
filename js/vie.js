@@ -9,31 +9,140 @@ function vent(m, code) {
 }
 
 export function creerHerbe(buffer, n, exclus = []) {
-  const a = new Float32Array(buffer), total = a.length / 6; n = Math.min(n, total);
-  // une lame : base large, pointe courbe
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute([-.5, 0, 0, .5, 0, 0, -.3, .55, .08, .3, .55, .08, 0, 1, .28], 3));
-  g.setAttribute('normal', new THREE.Float32BufferAttribute([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0], 3));
-  g.setIndex([0, 1, 2, 1, 3, 2, 2, 3, 4]);
-  const m = new THREE.MeshStandardMaterial({ roughness: .9, side: THREE.DoubleSide, envMapIntensity: .5 });
-  vent(m, (s) => {
-    s.vertexShader = s.vertexShader.replace('#include <common>', '#include <common>\nuniform float uTemps;\nvarying float vH;').replace('#include <begin_vertex>', `#include <begin_vertex>
-      vH = position.y;
-      vec4 oW = instanceMatrix*vec4(0.,0.,0.,1.);
-      float vv = sin(uTemps*1.3+oW.x*3.+oW.z*2.4)+.6*sin(uTemps*2.3+oW.x*7.);
-      transformed.x += position.y*position.y*vv*.26; transformed.z += position.y*position.y*.12*cos(uTemps*1.1+oW.z*4.);`);
-    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vH;').replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb *= mix(.42,1.28,vH);');
-  });
-  const im = new THREE.InstancedMesh(g, m, n); im.frustumCulled = false; im.receiveShadow = true;
-  const d = new THREE.Object3D(), c = new THREE.Color();
-  const pas = Math.floor(total / n);
+  const points = new Float32Array(buffer);
+  const total = Math.floor(points.length / 6);
+  const mobile = n <= 20000;
+  n = Math.min(n, total);
+
+  // Le tirage reproductible ne dépend ni de la caméra ni du palier en cours.
+  let graine = 17491;
+  const hasard = () => {
+    graine = (Math.imul(graine, 1664525) + 1013904223) >>> 0;
+    return graine / 4294967296;
+  };
+  const interdit = (x, y) => exclus.some(([cx, cy, r]) => (x - cx) ** 2 + (y - cy) ** 2 < r * r);
+  const racines = new Float32Array(3 * (n + (mobile ? Math.floor(n / 2) : n)));
+  const ordre = [];
+  const planter = (j, x, y) => {
+    const k = ordre.length * 3;
+    racines[k] = j;
+    racines[k + 1] = x;
+    racines[k + 2] = y;
+    ordre.push(k);
+  };
   for (let i = 0; i < n; i++) {
-    const j = i * pas; const x = a[j * 6], y = a[j * 6 + 1], z = a[j * 6 + 2];
-    if (exclus.some((e) => Math.hypot(x - e[0], y - e[1]) < e[2])) { d.position.set(0, -50, 0); d.scale.setScalar(.0001); d.updateMatrix(); im.setMatrixAt(i, d.matrix); continue; }
-    d.position.set(x, z - .004, -y); d.rotation.set((Math.random() - .5) * .3, Math.random() * 6.28, (Math.random() - .5) * .3);
-    const h = .018 + Math.random() * Math.random() * .036; d.scale.set(.0048 + Math.random() * .004, h, .005); d.updateMatrix(); im.setMatrixAt(i, d.matrix);
-    c.setRGB(a[j * 6 + 3], a[j * 6 + 4], a[j * 6 + 5]); const hsl = {}; c.getHSL(hsl); c.setHSL(hsl.h + (Math.random() - .5) * .03, Math.min(1, hsl.s * 1.08), Math.min(.6, hsl.l * (1.05 + Math.random() * .45))); im.setColorAt(i, c);
+    const j = 6 * Math.floor((i + hasard()) * total / n);
+    const x = points[j], y = points[j + 1];
+    if (interdit(x, y)) continue;
+    planter(j, x, y);
+    if (mobile && i % 2 === 0) continue;
+    const a = hasard() * Math.PI * 2, r = .003 + hasard() * .006;
+    const dx = Math.cos(a) * r, dy = Math.sin(a) * r;
+    if (!interdit(x + dx, y + dy)) planter(j, x + dx, y + dy);
+    else if (!interdit(x - dx, y - dy)) planter(j, x - dx, y - dy);
   }
+  // Chaque préfixe reste réparti sur le village quand main.js réduit count.
+  for (let i = ordre.length - 1; i > 0; i--) {
+    const j = Math.floor(hasard() * (i + 1));
+    const k = ordre[i];
+    ordre[i] = ordre[j];
+    ordre[j] = k;
+  }
+
+  const pointe = .24;
+  const sections = [[0, .5, 0], [.44, .36, .035]];
+  if (!mobile) sections.push([.76, .17, .115]);
+  const sommets = [], normales = [], couleurs = [], triangles = [];
+  for (const [h, largeur, courbe] of sections) {
+    sommets.push(-largeur, h, courbe, largeur, h, courbe);
+    normales.push(-.16, .97, .18, .16, .97, .18);
+    const teinte = [.50 + .83 * h, .56 + .69 * h, .49 + .41 * h];
+    couleurs.push(...teinte, ...teinte);
+  }
+  const sommet = sommets.length / 3;
+  sommets.push(0, 1, pointe);
+  normales.push(0, .96, .28);
+  couleurs.push(1.48, 1.30, .87);
+  for (let j = 0; j < sommet - 2; j += 2) triangles.push(j, j + 1, j + 2, j + 1, j + 3, j + 2);
+  triangles.push(sommet - 2, sommet - 1, sommet);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(sommets, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(normales, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(couleurs, 3));
+  g.setIndex(triangles);
+
+  // Une petite corolle à cinq pétales, dont le centre coïncide avec la pointe.
+  const corolle = new THREE.BufferGeometry();
+  const petales = [0, 1, pointe], teintesPetales = [.95, .70, .38], faces = [];
+  for (let j = 0; j < 15; j++) {
+    const a = j * Math.PI * 2 / 15, r = j % 3 === 0 ? .63 : 1;
+    petales.push(Math.cos(a) * r * 1.4, 1 + .075 * r, pointe + Math.sin(a) * r * .17);
+    teintesPetales.push(1, 1, 1);
+    faces.push(0, (j + 1) % 15 + 1, j + 1);
+  }
+  corolle.setAttribute('position', new THREE.Float32BufferAttribute(petales, 3));
+  corolle.setAttribute('color', new THREE.Float32BufferAttribute(teintesPetales, 3));
+  corolle.setIndex(faces);
+  corolle.computeVertexNormals();
+
+  const m = new THREE.MeshPhysicalMaterial({ roughness: .89, side: THREE.DoubleSide, envMapIntensity: .5, vertexColors: true });
+  vent(m, (s) => {
+    // Même déplacement pour le bout d'une lame et sa fleur, dans le repère du village.
+    const deplacement = `
+      vec2 racine = instanceMatrix[3].xz;
+      float vague = sin(dot(racine, vec2(-1.55, .43)) - uTemps * .83);
+      float houle = sin(dot(racine, vec2(.64, 2.11)) - uTemps * .56);
+      float frisson = sin(dot(racine, vec2(19., -12.)) + uTemps * 4.1);
+      float souffle = .19 + .12 * vague + .065 * houle + .034 * frisson;
+      float hauteur = min(position.y, 1.);
+      vec3 pli = vec3(-souffle, 0., souffle * .28 + .027 * frisson)
+        * hauteur * hauteur * instanceMatrix[1].y;`;
+    s.vertexShader = s.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform float uTemps;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\n' + deplacement)
+      .replace('#include <project_vertex>', THREE.ShaderChunk.project_vertex.replace('mvPosition = modelViewMatrix', 'mvPosition.xyz += pli;\nmvPosition = modelViewMatrix'))
+      .replace('#include <worldpos_vertex>', THREE.ShaderChunk.worldpos_vertex.replace('worldPosition = modelMatrix', 'worldPosition.xyz += pli;\nworldPosition = modelMatrix'));
+    // Les deux faces gardent une normale orientée vers le ciel.
+    s.fragmentShader = s.fragmentShader.replace('#include <normal_fragment_begin>',
+      THREE.ShaderChunk.normal_fragment_begin.replace('normal *= faceDirection;', ''));
+  });
+  m.customProgramCacheKey = () => 'lente-pelouse-vent';
+  const nombreLames = ordre.length;
+  const nombreFleurs = Math.round(nombreLames * .03);
+  const partFleurie = nombreLames ? nombreFleurs / nombreLames : 0;
+  const im = new THREE.InstancedMesh(g, m, nombreLames);
+  const fleurs = new THREE.InstancedMesh(corolle, m, nombreFleurs);
+  im.frustumCulled = fleurs.frustumCulled = false;
+  im.receiveShadow = fleurs.receiveShadow = true;
+  fleurs.renderOrder = im.renderOrder + 1;
+  im.add(fleurs);
+  im.onBeforeRender = () => { fleurs.count = Math.round(im.count * partFleurie); };
+
+  const d = new THREE.Object3D(), c = new THREE.Color();
+  const palette = ['#f1e9d4', '#e6c66b', '#e0adb1', '#b8a8d1'].map((hex) => new THREE.Color(hex));
+  const sec = new THREE.Color('#735c32');
+  let fleur = 0;
+  for (let i = 0; i < nombreLames; i++) {
+    const k = ordre[i], j = racines[k], x = racines[k + 1], y = racines[k + 2];
+    const h = .020 + .035 * Math.pow(hasard(), 1.6);
+    d.position.set(x, points[j + 2] - .004, -y);
+    d.rotation.set((hasard() - .5) * .35, hasard() * Math.PI * 2, (hasard() - .5) * .27, 'YXZ');
+    d.scale.set(.00288 + hasard() * .0024, h, h);
+    d.updateMatrix();
+    im.setMatrixAt(i, d.matrix);
+    c.setRGB(points[j + 3], points[j + 4], points[j + 5]);
+    const touffe = .5 + .5 * Math.sin(x * 14 + y * 7) * Math.sin(y * 17 - x * 5);
+    c.lerp(sec, touffe * .13).multiplyScalar(.93 + .23 * touffe + hasard() * .20);
+    im.setColorAt(i, c);
+    if (Math.round((i + 1) * partFleurie) > fleur) {
+      fleurs.setMatrixAt(fleur, d.matrix);
+      fleurs.setColorAt(fleur, palette[Math.floor(hasard() * palette.length)]);
+      fleur++;
+    }
+  }
+  im.instanceMatrix.needsUpdate = fleurs.instanceMatrix.needsUpdate = true;
+  if (im.instanceColor) im.instanceColor.needsUpdate = true;
+  if (fleurs.instanceColor) fleurs.instanceColor.needsUpdate = true;
   return im;
 }
 
@@ -96,20 +205,81 @@ export function creerFeuillage(arbres, tex, densite) {
   const g = new THREE.Group(); g.add(im, ombres); return g;
 }
 
-// ---- fumees : points doux qui montent des cheminees ----
 export function creerFumees(sources, parCheminee = 16) {
-  const n = sources.length * parCheminee, pos = new Float32Array(n * 3), ph = new Float32Array(n);
-  for (let i = 0; i < n; i++) { const s = sources[Math.floor(i / parCheminee)]; const p = b2t(s); pos.set([p.x, p.y, p.z], i * 3); ph[i] = (i % parCheminee) / parCheminee + Math.random() * .03; }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aP', new THREE.BufferAttribute(ph, 1));
+  parCheminee = THREE.MathUtils.clamp(Math.floor(parCheminee), 0, 16);
+  const n = sources.length * parCheminee;
+  const g = new THREE.PlaneGeometry(1, 1);
+  const bouffees = new Float32Array(n * 2);
+  const bruit = new THREE.TextureLoader().load(new URL('../assets/tex/bruit.png', import.meta.url).href);
+  bruit.wrapS = bruit.wrapT = THREE.RepeatWrapping;
   const m = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false,
-    uniforms: { uTemps: temps, uCoul: { value: new THREE.Color('#fff') }, uPx: { value: 1 }, uBouffee: { value: 0 } },
-    vertexShader: `attribute float aP; uniform float uTemps,uPx; varying float vL;
-      void main(){ float l=fract(aP+uTemps*.052); vL=l; vec3 p=position; float s=fract(aP*7.3)*6.28; p.y+=l*.62; p.x-=l*l*.42; p.x+=sin(l*6.+s)*.03*l; p.z+=cos(l*5.+s)*.035*l;
-      vec4 mv=modelViewMatrix*vec4(p,1.); gl_Position=projectionMatrix*mv; gl_PointSize=(.012+l*.075)*uPx/-mv.z; }`,
-    fragmentShader: `precision highp float; uniform vec3 uCoul; varying float vL; void main(){ float d=length(gl_PointCoord-.5)*2.; float a=smoothstep(1.,.2,d)*smoothstep(0.,.1,vL)*(1.-vL)*.24; gl_FragColor=vec4(uCoul,a); }`,
+    // uPx reste disponible pour main.js ; la projection fixe désormais la taille à l'écran.
+    uniforms: { uTemps: temps, uCoul: { value: new THREE.Color('#fff') }, uPx: { value: 1 }, uBouffee: { value: 0 }, uBruit: { value: bruit } },
+    vertexShader: `
+      attribute vec2 aBouffee;
+      uniform float uTemps, uBouffee;
+      varying vec2 vNuage, vEchantillon;
+      varying float vOpacite;
+      void main() {
+        float age = fract(aBouffee.x + uTemps * .108);
+        float graine = aBouffee.y;
+        const vec3 vent = vec3(-1., 0., .28);
+        vec3 centre = instanceMatrix[3].xyz;
+        centre.y += .007 + age * (.24 + age * .37);
+        centre += vent * (.48 * age * age);
+        centre.xz += vec2(sin(age * 6. + graine * 6.28), cos(age * 5. + graine * 6.28)) * (.04 * age);
+        vec4 mv = modelViewMatrix * vec4(centre, 1.);
+
+        // Rotation de la bouffée, puis étirement dans la direction du vent projeté.
+        float angle = graine * 6.28 + age * (1.2 + graine * 1.2);
+        float c = cos(angle), s = sin(angle);
+        vec2 p = mat2(c, s, -s, c) * position.xy;
+        vec2 axe = (modelViewMatrix * vec4(vent, 0.)).xy;
+        axe *= inversesqrt(max(dot(axe, axe), .001));
+        p += axe * dot(p, axe) * (.27 * age);
+        float taille = .063 * (1. + 4. * age) * (1. + .2 * clamp(uBouffee, 0., 1.));
+        mv.xy += p * taille;
+        gl_Position = projectionMatrix * mv;
+        vNuage = position.xy * 2.;
+        vEchantillon = uv * .72 + vec2(graine * 7.13, graine * 4.37 + age * .19);
+        vOpacite = smoothstep(0., .07, age) * (1. - smoothstep(.30, 1., age)) * (1. - .52 * age);
+      }`,
+    fragmentShader: `
+      uniform vec3 uCoul;
+      uniform sampler2D uBruit;
+      varying vec2 vNuage, vEchantillon;
+      varying float vOpacite;
+      void main() {
+        float lobes = texture2D(uBruit, vEchantillon).r;
+        float grain = texture2D(uBruit, vEchantillon * 2.7 + .17).r;
+        float rayon = length(vNuage) + (.5 - lobes) * .46 + (.5 - grain) * .12;
+        float bord = 1. - smoothstep(.34, .93, rayon);
+        bord *= 1. - smoothstep(.83, 1., max(abs(vNuage.x), abs(vNuage.y)));
+        float coeur = 1. - smoothstep(.04, .77, rayon + vNuage.y * .13);
+        float alpha = .35 * vOpacite * bord * mix(.53, 1., coeur) * mix(.75, 1., grain);
+        gl_FragColor = vec4(uCoul * mix(.61, 1.16, coeur), alpha);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`,
   });
-  const p = new THREE.Points(g, m); p.frustumCulled = false; return p;
+  const fumees = new THREE.InstancedMesh(g, m, n);
+  const matrice = new THREE.Matrix4();
+  sources.forEach((source, i) => {
+    const p = b2t(source);
+    matrice.makeTranslation(p.x, p.y, p.z);
+    const depart = Math.random();
+    for (let j = 0; j < parCheminee; j++) {
+      const k = i * parCheminee + j;
+      fumees.setMatrixAt(k, matrice);
+      bouffees[k * 2] = (depart + (j + Math.random() * .2) / parCheminee) % 1;
+      bouffees[k * 2 + 1] = Math.random();
+    }
+  });
+  g.setAttribute('aBouffee', new THREE.InstancedBufferAttribute(bouffees, 2));
+  fumees.instanceMatrix.needsUpdate = true;
+  fumees.frustumCulled = false;
+  return fumees;
 }
 
 // ---- halos autour de chaque lumiere, invisibles le jour ----
